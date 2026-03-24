@@ -1,0 +1,2471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LIS Visualizer Ultra</title>
+  <style>
+    :root {
+      --bg-1: #060816;
+      --bg-2: #0e1330;
+      --panel: rgba(10, 16, 36, 0.72);
+      --panel-strong: rgba(12, 18, 42, 0.9);
+      --glass: rgba(255,255,255,0.05);
+      --glass-2: rgba(255,255,255,0.08);
+      --line: rgba(255,255,255,0.09);
+      --text: #edf2ff;
+      --muted: #9aa7c7;
+      --blue: #6d7dff;
+      --cyan: #5fe4ff;
+      --green: #39d98a;
+      --yellow: #ffc857;
+      --red: #ff6b8b;
+      --purple: #9b6dff;
+      --shadow: 0 24px 70px rgba(0,0,0,0.35);
+      --radius: 26px;
+      --radius-sm: 18px;
+      --glow: 0 0 0 1px rgba(255,255,255,0.05), 0 12px 30px rgba(91,124,255,0.22);
+      --btn-text: #fff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(109,125,255,0.18), transparent 0 28%),
+        radial-gradient(circle at 90% 8%, rgba(95,228,255,0.16), transparent 0 22%),
+        radial-gradient(circle at 50% 90%, rgba(155,109,255,0.10), transparent 0 30%),
+        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+      overflow-x: hidden;
+    }
+
+    body.light {
+      --bg-1: #eef4ff;
+      --bg-2: #dfe9ff;
+      --panel: rgba(255,255,255,0.72);
+      --panel-strong: rgba(255,255,255,0.9);
+      --glass: rgba(20,30,60,0.04);
+      --glass-2: rgba(20,30,60,0.08);
+      --line: rgba(20,30,60,0.08);
+      --text: #10182c;
+      --muted: #596987;
+      --shadow: 0 20px 50px rgba(59,84,133,0.12);
+      --glow: 0 0 0 1px rgba(30,50,90,0.04), 0 12px 30px rgba(91,124,255,0.10);
+      --btn-text: #f8fbff;
+      background:
+        radial-gradient(circle at 10% 10%, rgba(109,125,255,0.13), transparent 0 28%),
+        radial-gradient(circle at 90% 8%, rgba(95,228,255,0.14), transparent 0 22%),
+        radial-gradient(circle at 50% 90%, rgba(155,109,255,0.08), transparent 0 30%),
+        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+    }
+
+    .aurora {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .aurora::before,
+    .aurora::after {
+      content: "";
+      position: absolute;
+      inset: auto;
+      width: 42vw;
+      height: 42vw;
+      filter: blur(70px);
+      opacity: 0.22;
+      border-radius: 999px;
+      animation: floatBlob 18s ease-in-out infinite;
+    }
+
+    .aurora::before {
+      left: -8vw;
+      top: -8vw;
+      background: radial-gradient(circle, rgba(109,125,255,0.8), transparent 58%);
+    }
+
+    .aurora::after {
+      right: -10vw;
+      top: 16vh;
+      background: radial-gradient(circle, rgba(95,228,255,0.7), transparent 60%);
+      animation-delay: -7s;
+    }
+
+    @keyframes floatBlob {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(4vw, 3vh) scale(1.08); }
+    }
+
+    .page {
+      width: min(1440px, calc(100% - 28px));
+      margin: 14px auto 26px;
+      position: relative;
+      z-index: 1;
+      display: grid;
+      grid-template-columns: 420px 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .sidebar {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: sticky;
+      top: 14px;
+      align-self: start;
+    }
+
+    .main {
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      min-width: 0;
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      padding: 18px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, rgba(109,125,255,0.26), rgba(95,228,255,0.13), rgba(155,109,255,0.12));
+      border: 1px solid rgba(255,255,255,0.10);
+      box-shadow: var(--glow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,0.14), transparent 60%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      align-items: start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .brand {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .logo {
+      width: 54px;
+      height: 54px;
+      border-radius: 18px;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.05));
+      border: 1px solid rgba(255,255,255,0.14);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10);
+      font-size: 22px;
+    }
+
+    .hero h1 {
+      margin: 0;
+      font-size: 28px;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .hero p {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+      line-height: 1.65;
+      max-width: 92%;
+    }
+
+    .hero-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .chip {
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.09);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .icon-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.08);
+      color: var(--text);
+      width: 42px;
+      height: 42px;
+      border-radius: 14px;
+      cursor: pointer;
+      font-size: 18px;
+      transition: transform .18s ease, background .18s ease;
+    }
+
+    .icon-btn:hover { transform: translateY(-1px) scale(1.02); }
+
+    .panel {
+      background: var(--glass);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 14px;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.16em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    input, select, button, textarea {
+      font: inherit;
+    }
+
+    input[type="text"], select {
+      width: 100%;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.95);
+      color: #10203c;
+      padding: 13px 14px;
+      border-radius: 14px;
+      outline: none;
+      font-weight: 800;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.2);
+    }
+
+    body.light input[type="text"],
+    body.light select {
+      background: rgba(255,255,255,0.98);
+      color: #0f1a32;
+    }
+
+    input[type="text"]:focus, select:focus {
+      border-color: rgba(91,124,255,0.55);
+      box-shadow: 0 0 0 4px rgba(91,124,255,0.12);
+    }
+
+    .grid-2, .grid-3, .grid-4 {
+      display: grid;
+      gap: 8px;
+    }
+
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+    button.action {
+      border: 0;
+      border-radius: 14px;
+      padding: 11px 12px;
+      color: var(--btn-text);
+      cursor: pointer;
+      font-weight: 800;
+      transition: transform 0.16s ease, opacity 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+      box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+    }
+
+    button.action:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    button.action:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .b-build { background: linear-gradient(135deg, #4f7cff, #2563eb); }
+    .b-step { background: linear-gradient(135deg, #10b981, #059669); }
+    .b-play { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .b-pause { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .b-reset { background: linear-gradient(135deg, #6b7280, #4b5563); }
+    .b-rand { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .b-export { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+    .b-preset1 { background: linear-gradient(135deg, #5b7cff, #7c4dff); }
+    .b-preset2 { background: linear-gradient(135deg, #0ea5e9, #2563eb); }
+    .b-preset3 { background: linear-gradient(135deg, #14b8a6, #0f766e); }
+    .b-preset4 { background: linear-gradient(135deg, #ec4899, #db2777); }
+
+    .switch-row {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      border-radius: 14px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .switch {
+      position: relative;
+      width: 52px;
+      height: 30px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: .2s ease;
+      flex: 0 0 auto;
+    }
+
+    .switch::after {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 4px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      transition: .2s ease;
+    }
+
+    .switch.active {
+      background: linear-gradient(135deg, rgba(109,125,255,0.85), rgba(95,228,255,0.55));
+    }
+
+    .switch.active::after {
+      left: 26px;
+    }
+
+    .slider-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: #7c99ff;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .stat {
+      position: relative;
+      overflow: hidden;
+      border-radius: 18px;
+      padding: 14px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+
+    .stat::after {
+      content: "";
+      position: absolute;
+      inset: auto -40px -40px auto;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(109,125,255,0.16), transparent 70%);
+      pointer-events: none;
+    }
+
+    .stat span {
+      display: block;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 800;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 22px;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+    }
+
+    .sub {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 14px;
+    }
+
+    .status-box {
+      border-radius: 22px;
+      padding: 16px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+      border: 1px solid var(--line);
+      line-height: 1.75;
+      min-height: 96px;
+      color: var(--text);
+      box-shadow: var(--glow);
+    }
+
+    .status-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .pulse {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .pulse-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--green);
+      box-shadow: 0 0 0 0 rgba(57,217,138,0.6);
+      animation: pulse 1.8s infinite;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(57,217,138,0.55); }
+      70% { box-shadow: 0 0 0 14px rgba(57,217,138,0); }
+      100% { box-shadow: 0 0 0 0 rgba(57,217,138,0); }
+    }
+
+    .mini-card {
+      border-radius: 22px;
+      background: var(--glass);
+      border: 1px solid var(--line);
+      padding: 14px;
+    }
+
+    .mini-card h3, .section-title {
+      margin: 0;
+      font-size: 15px;
+      letter-spacing: -0.02em;
+      font-weight: 800;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+    }
+
+    .viz-shell {
+      position: relative;
+      background: rgba(7, 11, 22, 0.82);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      padding: 10px;
+      overflow: hidden;
+      box-shadow: var(--glow);
+    }
+
+    body.light .viz-shell,
+    body.light .code-box,
+    body.light .history-box,
+    body.light .timeline-box,
+    body.light .explain-box {
+      background: rgba(255,255,255,0.72);
+    }
+
+    .viz-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin: 2px 4px 10px;
+      padding: 8px 10px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+
+    .viz-toolbar strong {
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .badge {
+      padding: 8px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.08);
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text);
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: 460px;
+      border-radius: 18px;
+      background:
+        radial-gradient(circle at 50% 0%, rgba(109,125,255,0.08), transparent 40%),
+        linear-gradient(180deg, #11182d 0%, #09101e 100%);
+    }
+
+    body.light svg {
+      background:
+        radial-gradient(circle at 50% 0%, rgba(109,125,255,0.08), transparent 40%),
+        linear-gradient(180deg, #f7faff 0%, #eef4ff 100%);
+    }
+
+    .mid-grid, .bottom-grid {
+      display: grid;
+      gap: 14px;
+    }
+
+    .mid-grid { grid-template-columns: 1fr 1fr; }
+    .bottom-grid { grid-template-columns: 1fr 1fr 1fr; }
+
+    .code-box, .history-box, .timeline-box, .explain-box {
+      background: rgba(7, 11, 22, 0.86);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .section-head span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    pre {
+      margin: 0;
+      padding: 16px;
+      min-height: 290px;
+      overflow: auto;
+      white-space: pre-wrap;
+      font-size: 14px;
+      line-height: 1.85;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      color: #dbe4ff;
+    }
+
+    body.light pre { color: #1d2950; }
+
+    .line-active {
+      display: block;
+      background: rgba(57,217,138,0.14);
+      color: #9af0c7;
+      border-left: 4px solid var(--green);
+      padding-left: 10px;
+      border-radius: 8px;
+    }
+
+    body.light .line-active {
+      color: #0f6e4f;
+    }
+
+    .history-scroll, .timeline-scroll, .explain-scroll {
+      max-height: 320px;
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    body.light th, body.light td {
+      border-bottom-color: rgba(10,20,40,0.06);
+    }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: rgba(16,23,43,0.96);
+      z-index: 2;
+    }
+
+    body.light th { background: rgba(245,248,255,0.96); }
+
+    tr.clickable { cursor: pointer; }
+    tr.clickable:hover td { background: rgba(255,255,255,0.05); }
+    tr.current td { background: rgba(91,124,255,0.12); }
+
+    .timeline-track {
+      padding: 18px 16px 20px;
+      display: flex;
+      gap: 8px;
+      align-items: end;
+      min-height: 148px;
+      overflow-x: auto;
+    }
+
+    .timeline-step {
+      min-width: 32px;
+      height: 46px;
+      border-radius: 12px 12px 8px 8px;
+      background: linear-gradient(180deg, rgba(109,125,255,0.9), rgba(109,125,255,0.35));
+      border: 1px solid rgba(255,255,255,0.08);
+      cursor: pointer;
+      transition: transform .18s ease, filter .18s ease;
+      position: relative;
+      flex: 0 0 auto;
+    }
+
+    .timeline-step:hover { transform: translateY(-2px); }
+    .timeline-step.current { outline: 2px solid var(--cyan); filter: brightness(1.18); }
+    .timeline-step.done { background: linear-gradient(180deg, rgba(57,217,138,0.95), rgba(57,217,138,0.35)); }
+
+    .timeline-step span {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .explain-grid {
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .fact {
+      padding: 12px 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+
+    .fact strong {
+      display: block;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .fact div {
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+
+
+    .code-line {
+      display: block;
+      position: relative;
+      padding-left: 10px;
+      border-left: 4px solid transparent;
+      border-radius: 8px;
+      transition: background .18s ease, color .18s ease, border-color .18s ease;
+    }
+
+    .code-line:hover {
+      background: rgba(255,255,255,0.05);
+    }
+
+    .code-line[data-tip] {
+      cursor: help;
+    }
+
+    .code-line::after {
+      content: attr(data-tip);
+      position: absolute;
+      left: calc(100% + 12px);
+      top: 50%;
+      transform: translateY(-50%) translateX(-4px);
+      width: min(280px, 48vw);
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(10, 16, 36, 0.96);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: #edf2ff;
+      font-size: 12px;
+      line-height: 1.55;
+      white-space: normal;
+      box-shadow: 0 14px 34px rgba(0,0,0,0.28);
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .18s ease, transform .18s ease, visibility .18s ease;
+      z-index: 30;
+    }
+
+    body.light .code-line::after {
+      background: rgba(255,255,255,0.98);
+      color: #10203c;
+      border-color: rgba(20,30,60,0.10);
+    }
+
+    .code-line:hover::after,
+    .code-line:focus-visible::after {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(-50%) translateX(0);
+    }
+
+    .analysis-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+      align-items: start;
+    }
+
+    .education-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .full-width {
+      margin-top: 14px;
+    }
+
+    .details-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      overflow: hidden;
+    }
+
+    .details-card summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 16px 18px;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .details-card summary::-webkit-details-marker { display: none; }
+
+    .details-card summary::after {
+      content: '+';
+      font-size: 20px;
+      color: var(--cyan);
+    }
+
+    .details-card[open] summary::after {
+      content: '–';
+    }
+
+    .details-content {
+      padding: 0 18px 18px;
+      color: var(--text);
+      line-height: 1.75;
+      font-size: 14px;
+    }
+
+    .details-content p {
+      margin: 0 0 10px;
+    }
+
+    .key-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .key-box {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .key-box strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--cyan);
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .chart-wrap {
+      padding: 16px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .chart-top {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .chart-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chart-controls strong { color: var(--text); }
+
+    .chart-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 14px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chart-legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .chart-legend i {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+    }
+
+    .chart-stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .mini-stat {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--line);
+    }
+
+    .mini-stat span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+    }
+
+    .mini-stat strong {
+      font-size: 16px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 320px;
+      display: block;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid var(--line);
+    }
+
+    .compare-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .impact-box {
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.04);
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .impact-box.good { box-shadow: inset 0 0 0 1px rgba(57,217,138,0.18); }
+    .impact-box.bad { box-shadow: inset 0 0 0 1px rgba(255,107,139,0.18); }
+
+    .impact-box strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .impact-box.good strong { color: var(--green); }
+    .impact-box.bad strong { color: var(--red); }
+
+    .small-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      text-align: center;
+      padding-top: 2px;
+    }
+
+    .kbd {
+      display: inline-block;
+      padding: 3px 8px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.06);
+      font-size: 12px;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    @media (max-width: 980px) {
+      .page { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+      .bottom-grid { grid-template-columns: 1fr 1fr; }
+      .top-grid, .mid-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 760px) {
+      .grid-3, .grid-4, .grid-2, .stats, .bottom-grid { grid-template-columns: 1fr; }
+      .page {
+        width: min(100%, calc(100% - 18px));
+        margin: 9px auto 18px;
+      }
+      .hero h1 { font-size: 24px; }
+      svg { height: 390px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="aurora"></div>
+
+  <div class="page">
+    <aside class="card sidebar">
+      <div class="hero">
+        <div class="hero-top">
+          <div class="brand">
+            <div class="logo">∞</div>
+            <div>
+              <h1>LIS Visualizer Ultra</h1>
+              <p>A polished single-file playground for Longest Increasing Subsequence with cinematic visuals, smarter insights, reconstructed answer tracking, and presentation-ready interaction.</p>
+            </div>
+          </div>
+          <button class="icon-btn" id="themeBtn" title="Toggle theme">🌙</button>
+        </div>
+        <div class="hero-chips">
+          <div class="chip">Single-file</div>
+          <div class="chip">Host anywhere</div>
+          <div class="chip">DP + Binary Search</div>
+          <div class="chip">Keyboard shortcuts</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <label class="label" for="algorithm">Algorithm</label>
+        <select id="algorithm">
+          <option value="dp">Dynamic Programming · O(n²)</option>
+          <option value="bs">Binary Search / Patience · O(n log n)</option>
+        </select>
+        <div class="switch-row">
+          <span>Show reconstructed LIS</span>
+          <div class="switch active" id="lisSwitch"></div>
+        </div>
+        <div class="switch-row">
+          <span>Glow animations</span>
+          <div class="switch active" id="glowSwitch"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <label class="label" for="arrayInput">Input Array</label>
+        <input id="arrayInput" type="text" value="10, 9, 2, 5, 3, 7, 101, 18" />
+      </div>
+
+      <div class="panel">
+        <label class="label">Presets</label>
+        <div class="grid-4">
+          <button class="action b-preset1" id="preset1">Classic</button>
+          <button class="action b-preset2" id="preset2">Mixed</button>
+          <button class="action b-preset3" id="preset3">Flat</button>
+          <button class="action b-preset4" id="preset4">Worst Case</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <label class="label">Controls</label>
+        <div class="grid-3">
+          <button class="action b-build" id="buildBtn">Build Steps</button>
+          <button class="action b-step" id="stepBtn" disabled>Step</button>
+          <button class="action b-play" id="playBtn" disabled>Play</button>
+          <button class="action b-pause" id="pauseBtn" disabled>Pause</button>
+          <button class="action b-reset" id="resetBtn">Reset</button>
+          <button class="action b-rand" id="randomBtn">Random</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <label class="label">Tools</label>
+        <div class="grid-2">
+          <button class="action b-export" id="shareBtn">Copy State</button>
+          <button class="action b-export" id="pngBtn">Save SVG</button>
+        </div>
+        <div class="switch-row">
+          <span><span class="kbd">Space</span> play/pause</span>
+          <span><span class="kbd">→</span> next</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <label class="label">Animation Speed</label>
+        <div class="slider-wrap">
+          <span>Slow</span>
+          <input type="range" id="speedSlider" min="0.25" max="4" step="0.25" value="1" />
+          <strong id="speedText">1x</strong>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <span>Status</span>
+          <strong id="statusText">Idle</strong>
+          <span class="sub" id="statusSub">Ready when you are</span>
+        </div>
+        <div class="stat">
+          <span>Step</span>
+          <strong id="stepText">0 / 0</strong>
+          <span class="sub">Frame navigator</span>
+        </div>
+        <div class="stat">
+          <span>Comparisons</span>
+          <strong id="comparisonText">0</strong>
+          <span class="sub">Operation counter</span>
+        </div>
+        <div class="stat">
+          <span>LIS Length</span>
+          <strong id="lisText">-</strong>
+          <span class="sub" id="lisSequenceText">Sequence: —</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="card main">
+      <div class="top-grid">
+        <section class="status-box">
+          <div class="status-title">
+            <div class="pulse"><span class="pulse-dot"></span> Live algorithm commentary</div>
+            <div class="badge-row">
+              <div class="badge" id="modeBadge">Mode: DP</div>
+              <div class="badge" id="complexityBadge">Time: O(n²)</div>
+              <div class="badge" id="arrayBadge">n = 8</div>
+            </div>
+          </div>
+          <div id="messageBox">Enter numbers, press Build, and step through the algorithm.</div>
+        </section>
+
+        <section class="mini-card">
+          <h3>Legend</h3>
+          <div class="legend">
+            <div class="legend-item"><span class="swatch" style="background:#ff6b8b"></span>Current i</div>
+            <div class="legend-item"><span class="swatch" style="background:#ffc857"></span>Compared j / mid</div>
+            <div class="legend-item"><span class="swatch" style="background:#39d98a"></span>Reconstructed LIS</div>
+            <div class="legend-item"><span class="swatch" style="background:#6d7dff"></span>Regular value</div>
+          </div>
+        </section>
+      </div>
+
+      <div class="viz-shell">
+        <div class="viz-toolbar">
+          <strong>Visualization Stage</strong>
+          <div class="badge-row">
+            <div class="badge" id="captionBadge">Awaiting build</div>
+            <div class="badge" id="reconBadge">Reconstruction off</div>
+          </div>
+        </div>
+        <svg id="svgCanvas" viewBox="0 0 1100 460" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <div class="mid-grid">
+        <section class="code-box">
+          <div class="section-head">
+            <h3 class="section-title">Pseudocode Tracker</h3>
+            <span>Active line highlighting</span>
+          </div>
+          <pre id="codeBox"></pre>
+        </section>
+
+        <section class="timeline-box">
+          <div class="section-head">
+            <h3 class="section-title">Timeline</h3>
+            <span>Jump to any frame</span>
+          </div>
+          <div class="timeline-scroll">
+            <div class="timeline-track" id="timelineTrack"></div>
+          </div>
+        </section>
+      </div>
+
+      <div class="bottom-grid">
+        <section class="history-box">
+          <div class="section-head">
+            <h3 class="section-title">Action History</h3>
+            <span>Clickable log</span>
+          </div>
+          <div class="history-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 76px;">#</th>
+                  <th>Message</th>
+                </tr>
+              </thead>
+              <tbody id="historyBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="explain-box">
+          <div class="section-head">
+            <h3 class="section-title">Current State</h3>
+            <span>Instant reading</span>
+          </div>
+          <div class="explain-scroll">
+            <div class="explain-grid">
+              <div class="fact"><strong>Input</strong><div id="factInput">—</div></div>
+              <div class="fact"><strong>Primary state</strong><div id="factState">—</div></div>
+              <div class="fact"><strong>Current focus</strong><div id="factFocus">—</div></div>
+              <div class="fact"><strong>Recovered LIS</strong><div id="factLIS">—</div></div>
+            </div>
+          </div>
+        </section>
+
+        <section class="explain-box">
+          <div class="section-head">
+            <h3 class="section-title">Hosting</h3>
+            <span>Fast deployment</span>
+          </div>
+          <div class="explain-scroll">
+            <div class="explain-grid">
+              <div class="fact"><strong>GitHub Pages</strong><div>Save this file as <code>index.html</code> and upload it to a repo.</div></div>
+              <div class="fact"><strong>Netlify / Vercel</strong><div>Drag and drop the file into any static hosting dashboard.</div></div>
+              <div class="fact"><strong>Share state</strong><div>Use <b>Copy State</b> to copy the current array + selected algorithm.</div></div>
+              <div class="fact"><strong>Class presentation ready</strong><div>Play mode, timeline jumps, and state cards make it easy to explain live.</div></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+
+      <div class="analysis-grid">
+        <section class="explain-box">
+          <div class="section-head">
+            <h3 class="section-title">CLO-1 · Complexity Analysis</h3>
+            <span>Actual vs theoretical growth</span>
+          </div>
+          <div class="chart-wrap">
+            <div class="chart-top">
+              <div class="chart-controls">
+                <label for="growthN">Input size n</label>
+                <input type="range" id="growthN" min="4" max="60" step="1" value="20" />
+                <strong id="growthNText">20</strong>
+              </div>
+              <div class="badge-row">
+                <div class="badge">Worst case preset: decreasing array</div>
+              </div>
+            </div>
+            <div class="chart-legend">
+              <span><i style="background:#ff6b8b"></i>DP actual comparisons</span>
+              <span><i style="background:#ffd166"></i>DP theoretical O(n²)</span>
+              <span><i style="background:#5fe4ff"></i>Binary-search actual comparisons</span>
+              <span><i style="background:#39d98a"></i>Binary-search theoretical O(n log n)</span>
+            </div>
+            <svg id="growthSvg" class="chart-svg" viewBox="0 0 900 320" preserveAspectRatio="none"></svg>
+            <div class="chart-stats">
+              <div class="mini-stat"><span>DP actual</span><strong id="dpActualText">0</strong></div>
+              <div class="mini-stat"><span>DP theory</span><strong id="dpTheoryText">0</strong></div>
+              <div class="mini-stat"><span>BS actual</span><strong id="bsActualText">0</strong></div>
+              <div class="mini-stat"><span>BS theory</span><strong id="bsTheoryText">0</strong></div>
+            </div>
+            <div class="small-note" id="worstCaseText">In a strictly decreasing array, the DP method still performs every pairwise comparison, so comparisons grow quadratically even though the LIS length is only 1.</div>
+          </div>
+        </section>
+
+        <section class="explain-box">
+          <div class="section-head">
+            <h3 class="section-title">CLO-2 · Search Role + Impact</h3>
+            <span>Why the binary search rule matters</span>
+          </div>
+          <div class="explain-scroll">
+            <div class="explain-grid">
+              <div class="fact"><strong>Search step</strong><div>In the optimized method, binary search finds the first tail that is greater than or equal to the current value. That exact pile must be updated to keep tails minimal.</div></div>
+              <div class="fact"><strong>Why it matters</strong><div>If you search for the wrong pile, or append equal values instead of replacing them, the structure stops representing strictly increasing subsequences correctly.</div></div>
+              <div class="compare-grid">
+                <div class="impact-box good"><strong>Correct rule</strong><div id="impactGood">—</div></div>
+                <div class="impact-box bad"><strong>Wrong rule</strong><div id="impactBad">—</div></div>
+              </div>
+              <div class="fact"><strong>Impact summary</strong><div id="impactSummary">—</div></div>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="education-grid">
+        <details class="details-card" open>
+          <summary>Overview</summary>
+          <div class="details-content">
+            <p>The Longest Increasing Subsequence problem asks for the longest subsequence whose values are strictly increasing. A subsequence keeps the original order, but it does not need to be contiguous.</p>
+            <p>This tool shows two valid solutions. The dynamic programming version computes the best answer ending at every index. The optimized version uses patience sorting ideas and binary search to keep one minimal tail for every possible subsequence length.</p>
+            <p>Use the DP mode to understand the recurrence clearly, then switch to the binary-search mode to see how the same problem can be solved faster.</p>
+          </div>
+        </details>
+
+        <details class="details-card" open>
+          <summary>Worked Example</summary>
+          <div class="details-content">
+            <p><strong>Example array:</strong> [10, 9, 2, 5, 3, 7, 101, 18]</p>
+            <p>DP eventually builds values like [1, 1, 1, 2, 2, 3, 4, 4]. That means the best subsequence ending at 101 has length 4.</p>
+            <p>One valid LIS is [2, 3, 7, 18]. Another valid answer is [2, 5, 7, 101]. The tool reconstructs one of the valid optimal subsequences using parent pointers.</p>
+          </div>
+        </details>
+
+        <div class="details-card">
+          <div class="section-head">
+            <h3 class="section-title">Key Concepts + Common Mistakes</h3>
+            <span>For CLO-3</span>
+          </div>
+          <div class="details-content">
+            <div class="key-grid">
+              <div class="key-box"><strong>Dynamic Programming</strong>Overlapping subproblems appear because each LIS[i] depends on earlier LIS[j] values. The DP table visualizes those dependencies directly.</div>
+              <div class="key-box"><strong>Optimized Search</strong>The tails array does not always store an actual LIS. It stores the best possible ending value for each length, which is enough to compute the final answer.</div>
+              <div class="key-box"><strong>Common mistake</strong>Confusing subsequence with substring/subarray. LIS does not need adjacent elements; it only requires the original order to stay the same.</div>
+              <div class="key-box"><strong>Wrong paradigm example</strong>A naive greedy strategy like “always take the next bigger number immediately” can fail. For [3, 4, 1, 2, 8, 5, 6], that greedy idea can get stuck with [3, 4, 8], while the optimal LIS is [1, 2, 5, 6].</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="explain-box full-width">
+        <div class="section-head">
+          <h3 class="section-title">Complexity + Paradigm Summary</h3>
+          <span>Best / average / worst case</span>
+        </div>
+        <div class="explain-scroll">
+          <div class="explain-grid">
+            <div class="fact"><strong>DP paradigm</strong><div>Dynamic Programming. Time: O(n²) in best, average, and worst case. Space: O(n).</div></div>
+            <div class="fact"><strong>Optimized paradigm</strong><div>Still solves LIS exactly, but speeds up the transition step with binary search. Time: O(n log n) in best, average, and worst case. Space: O(n).</div></div>
+            <div class="fact"><strong>Worst case preset</strong><div>Use the <b>Worst Case</b> button to load a decreasing array. For DP, every j is still checked for every i, so the number of comparisons is maximized.</div></div>
+            <div class="fact"><strong>Alternative approach is worse</strong><div>A brute-force check of all subsequences is exponential, so both DP and the binary-search method are dramatically better.</div></div>
+          </div>
+        </div>
+      </section>
+
+      <div class="footer-note">LIS Visualizer Project — Zuhair Halawa © 2026</div>
+    </main>
+  </div>
+
+  <script>
+    const algorithm = document.getElementById('algorithm');
+    const arrayInput = document.getElementById('arrayInput');
+    const preset1 = document.getElementById('preset1');
+    const preset2 = document.getElementById('preset2');
+    const preset3 = document.getElementById('preset3');
+    const preset4 = document.getElementById('preset4');
+    const buildBtn = document.getElementById('buildBtn');
+    const stepBtn = document.getElementById('stepBtn');
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const randomBtn = document.getElementById('randomBtn');
+    const shareBtn = document.getElementById('shareBtn');
+    const pngBtn = document.getElementById('pngBtn');
+    const themeBtn = document.getElementById('themeBtn');
+    const lisSwitch = document.getElementById('lisSwitch');
+    const glowSwitch = document.getElementById('glowSwitch');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedText = document.getElementById('speedText');
+    const statusText = document.getElementById('statusText');
+    const statusSub = document.getElementById('statusSub');
+    const stepText = document.getElementById('stepText');
+    const comparisonText = document.getElementById('comparisonText');
+    const lisText = document.getElementById('lisText');
+    const lisSequenceText = document.getElementById('lisSequenceText');
+    const messageBox = document.getElementById('messageBox');
+    const codeBox = document.getElementById('codeBox');
+    const historyBody = document.getElementById('historyBody');
+    const svgCanvas = document.getElementById('svgCanvas');
+    const modeBadge = document.getElementById('modeBadge');
+    const complexityBadge = document.getElementById('complexityBadge');
+    const arrayBadge = document.getElementById('arrayBadge');
+    const captionBadge = document.getElementById('captionBadge');
+    const reconBadge = document.getElementById('reconBadge');
+    const timelineTrack = document.getElementById('timelineTrack');
+    const factInput = document.getElementById('factInput');
+    const factState = document.getElementById('factState');
+    const factFocus = document.getElementById('factFocus');
+    const factLIS = document.getElementById('factLIS');
+
+    const growthN = document.getElementById('growthN');
+    const growthNText = document.getElementById('growthNText');
+    const growthSvg = document.getElementById('growthSvg');
+    const dpActualText = document.getElementById('dpActualText');
+    const dpTheoryText = document.getElementById('dpTheoryText');
+    const bsActualText = document.getElementById('bsActualText');
+    const bsTheoryText = document.getElementById('bsTheoryText');
+    const worstCaseText = document.getElementById('worstCaseText');
+    const impactGood = document.getElementById('impactGood');
+    const impactBad = document.getElementById('impactBad');
+    const impactSummary = document.getElementById('impactSummary');
+
+    const dpPseudo = [
+      '1. Initialize dp[i] = 1 and parent[i] = -1 for all i',
+      '2. For each i from left to right',
+      '3. For each j from 0 to i - 1',
+      '4. If nums[j] < nums[i], the subsequence can extend',
+      '5. If dp[j] + 1 improves dp[i], update dp[i] and parent[i]',
+      '6. Find the index with the largest dp value',
+      '7. Reconstruct the LIS by following parent pointers backward'
+    ];
+
+    const bsPseudo = [
+      '1. Maintain tails, tailsIndex, and parent arrays',
+      '2. For each number in nums',
+      '3. Binary search the first tail >= current number',
+      '4. Replace or append in tails to keep tails minimal',
+      '5. Update parent of the current index using the previous pile tail',
+      '6. tails.length is the LIS length',
+      '7. Reconstruct LIS by following parent from the last tails index'
+    ];
+
+    const dpTips = [
+      'Start every position as an LIS of length 1 and mark its parent as none.',
+      'Pick the current ending position i that you want to solve.',
+      'Check every earlier index j that could connect to i.',
+      'Only smaller earlier values can extend a strictly increasing subsequence.',
+      'If going through j gives a longer subsequence, save the new length and parent.',
+      'The largest value inside dp tells you where the best LIS ends.',
+      'Follow parent links backward, then reverse the collected values to get the LIS.'
+    ];
+
+    const bsTips = [
+      'tails stores the smallest possible ending value for each subsequence length; tailsIndex and parent help rebuild one valid LIS.',
+      'Process each number once from left to right.',
+      'Find the first tail that is greater than or equal to the current value so strict increase is preserved.',
+      'Append when the value grows the longest subsequence; otherwise replace to keep future choices as flexible as possible.',
+      'The parent points to the tail of the previous subsequence length so reconstruction still works.',
+      'The number of tails equals the LIS length.',
+      'Start from the last tails index and follow parent pointers backward to recover one optimal LIS.'
+    ];
+
+    let frames = [];
+    let current = 0;
+    let timer = null;
+    let transitionRaf = null;
+
+    const state = {
+      showLIS: true,
+      glow: true,
+      theme: localStorage.getItem('lis-ultra-theme') || 'dark'
+    };
+
+    function deepCopy(value) {
+      return JSON.parse(JSON.stringify(value));
+    }
+
+    function clamp(n, min, max) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function easeInOutQuint(t) {
+      return t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+    }
+
+    function setTheme(theme) {
+      state.theme = theme;
+      document.body.classList.toggle('light', theme === 'light');
+      themeBtn.textContent = theme === 'light' ? '☀️' : '🌙';
+      localStorage.setItem('lis-ultra-theme', theme);
+      renderGrowthChart();
+    }
+
+    function toggleSwitch(el, key) {
+      state[key] = !state[key];
+      el.classList.toggle('active', state[key]);
+      if (key === 'glow') renderFrame(current);
+      if (key === 'showLIS') {
+        updateReconBadge();
+        renderFrame(current);
+      }
+    }
+
+    function updateReconBadge() {
+      reconBadge.textContent = state.showLIS ? 'Reconstruction on' : 'Reconstruction off';
+    }
+
+    function parseNumbers() {
+      return arrayInput.value
+        .split(',')
+        .map(part => Number(part.trim()))
+        .filter(part => !Number.isNaN(part));
+    }
+
+    function renderCode(type, activeLine) {
+      const lines = type === 'dp' ? dpPseudo : bsPseudo;
+      const tips = type === 'dp' ? dpTips : bsTips;
+      codeBox.innerHTML = lines.map((line, index) => {
+        const safe = line
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;');
+        const tip = (tips[index] || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+        const cls = `code-line${index === activeLine ? ' line-active' : ''}`;
+        return `<span class="${cls}" data-tip="${tip}" title="${tip}" tabindex="0">${safe}</span>`;
+      }).join('');
+
+      if (activeLine >= 0) {
+        requestAnimationFrame(() => {
+          const activeEl = codeBox.querySelector('.line-active');
+          if (activeEl) activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        });
+      }
+    }
+
+    function reconstructByParent(parent, endIndex, nums) {
+      const seq = [];
+      const indexes = [];
+      let k = endIndex;
+      while (k !== null && k !== undefined && k !== -1) {
+        seq.push(nums[k]);
+        indexes.push(k);
+        k = parent[k];
+      }
+      seq.reverse();
+      indexes.reverse();
+      return { seq, indexes };
+    }
+
+    function createDPFrames(nums) {
+      const movie = [];
+      const dp = Array(nums.length).fill(1);
+      const parent = Array(nums.length).fill(-1);
+      let comparisons = 0;
+      let bestIndex = nums.length ? 0 : -1;
+
+      movie.push(deepCopy({
+        type: 'dp', nums, dp, parent, comparisons,
+        i: null, j: null, low: null, mid: null,
+        line: 0,
+        lis: nums.length ? 1 : 0,
+        lisSequence: nums.length ? [nums[0]] : [],
+        lisIndexes: nums.length ? [0] : [],
+        bestIndex,
+        message: 'Initialized dp with 1 and parent with -1 for every position.'
+      }));
+
+      for (let i = 0; i < nums.length; i++) {
+        movie.push(deepCopy({
+          type: 'dp', nums, dp, parent, comparisons,
+          i, j: null, low: null, mid: null,
+          line: 1,
+          lis: dp[bestIndex] || 0,
+          lisSequence: reconstructByParent(parent, bestIndex, nums).seq,
+          lisIndexes: reconstructByParent(parent, bestIndex, nums).indexes,
+          bestIndex,
+          message: `Evaluating index ${i} with value ${nums[i]}.`
+        }));
+
+        for (let j = 0; j < i; j++) {
+          comparisons++;
+          movie.push(deepCopy({
+            type: 'dp', nums, dp, parent, comparisons,
+            i, j, low: null, mid: null,
+            line: 2,
+            lis: dp[bestIndex] || 0,
+            lisSequence: reconstructByParent(parent, bestIndex, nums).seq,
+            lisIndexes: reconstructByParent(parent, bestIndex, nums).indexes,
+            bestIndex,
+            message: `Compare nums[${j}] = ${nums[j]} with nums[${i}] = ${nums[i]}.`
+          }));
+
+          if (nums[j] < nums[i]) {
+            movie.push(deepCopy({
+              type: 'dp', nums, dp, parent, comparisons,
+              i, j, low: null, mid: null,
+              line: 3,
+              lis: dp[bestIndex] || 0,
+              lisSequence: reconstructByParent(parent, bestIndex, nums).seq,
+              lisIndexes: reconstructByParent(parent, bestIndex, nums).indexes,
+              bestIndex,
+              message: `${nums[j]} is smaller than ${nums[i]}, so an extension is possible.`
+            }));
+
+            const candidate = dp[j] + 1;
+            if (candidate > dp[i]) {
+              dp[i] = candidate;
+              parent[i] = j;
+              if (dp[i] > dp[bestIndex]) bestIndex = i;
+              const recon = reconstructByParent(parent, bestIndex, nums);
+              movie.push(deepCopy({
+                type: 'dp', nums, dp, parent, comparisons,
+                i, j, low: null, mid: null,
+                line: 4,
+                lis: dp[bestIndex] || 0,
+                lisSequence: recon.seq,
+                lisIndexes: recon.indexes,
+                bestIndex,
+                message: `Updated dp[${i}] to ${dp[i]} and parent[${i}] to ${j}.`
+              }));
+            }
+          } else {
+            movie.push(deepCopy({
+              type: 'dp', nums, dp, parent, comparisons,
+              i, j, low: null, mid: null,
+              line: 3,
+              lis: dp[bestIndex] || 0,
+              lisSequence: reconstructByParent(parent, bestIndex, nums).seq,
+              lisIndexes: reconstructByParent(parent, bestIndex, nums).indexes,
+              bestIndex,
+              message: `${nums[j]} is not smaller than ${nums[i]}, so no extension happens.`
+            }));
+          }
+        }
+      }
+
+      const recon = reconstructByParent(parent, bestIndex, nums);
+      movie.push(deepCopy({
+        type: 'dp', nums, dp, parent, comparisons,
+        i: bestIndex, j: null, low: null, mid: null,
+        line: 5,
+        lis: dp[bestIndex] || 0,
+        lisSequence: recon.seq,
+        lisIndexes: recon.indexes,
+        bestIndex,
+        message: `Best dp value was found at index ${bestIndex}.`
+      }));
+
+      movie.push(deepCopy({
+        type: 'dp', nums, dp, parent, comparisons,
+        i: bestIndex, j: null, low: null, mid: null,
+        line: 6,
+        lis: dp[bestIndex] || 0,
+        lisSequence: recon.seq,
+        lisIndexes: recon.indexes,
+        bestIndex,
+        message: `Finished. Reconstructed LIS = [${recon.seq.join(', ')}].`
+      }));
+
+      return movie;
+    }
+
+    function createBSFrames(nums) {
+      const movie = [];
+      const tails = [];
+      const tailsIndex = [];
+      const parent = Array(nums.length).fill(-1);
+      let comparisons = 0;
+
+      movie.push(deepCopy({
+        type: 'bs', nums, tails, tailsIndex, parent, comparisons,
+        i: null, j: null, low: null, mid: null,
+        line: 0,
+        lis: 0,
+        lisSequence: [],
+        lisIndexes: [],
+        bestIndex: -1,
+        message: 'Started with empty tails, tailsIndex, and parent arrays.'
+      }));
+
+      for (let i = 0; i < nums.length; i++) {
+        const currentValue = nums[i];
+        movie.push(deepCopy({
+          type: 'bs', nums, tails, tailsIndex, parent, comparisons,
+          i, j: null, low: null, mid: null,
+          line: 1,
+          lis: tails.length,
+          lisSequence: tailsIndex.length ? reconstructByParent(parent, tailsIndex[tailsIndex.length - 1], nums).seq : [],
+          lisIndexes: tailsIndex.length ? reconstructByParent(parent, tailsIndex[tailsIndex.length - 1], nums).indexes : [],
+          bestIndex: tailsIndex.length ? tailsIndex[tailsIndex.length - 1] : -1,
+          message: `Processing value ${currentValue} at index ${i}.`
+        }));
+
+        let low = 0;
+        let high = tails.length;
+
+        while (low < high) {
+          comparisons++;
+          const mid = Math.floor((low + high) / 2);
+          movie.push(deepCopy({
+            type: 'bs', nums, tails, tailsIndex, parent, comparisons,
+            i, j: null, low, mid,
+            line: 2,
+            lis: tails.length,
+            lisSequence: tailsIndex.length ? reconstructByParent(parent, tailsIndex[tailsIndex.length - 1], nums).seq : [],
+            lisIndexes: tailsIndex.length ? reconstructByParent(parent, tailsIndex[tailsIndex.length - 1], nums).indexes : [],
+            bestIndex: tailsIndex.length ? tailsIndex[tailsIndex.length - 1] : -1,
+            message: `Binary search compares tails[${mid}] = ${tails[mid]} with ${currentValue}.`
+          }));
+
+          if (tails[mid] < currentValue) low = mid + 1;
+          else high = mid;
+        }
+
+        if (low > 0) parent[i] = tailsIndex[low - 1];
+
+        const appended = low === tails.length;
+        if (appended) {
+          tails.push(currentValue);
+          tailsIndex.push(i);
+        } else {
+          tails[low] = currentValue;
+          tailsIndex[low] = i;
+        }
+
+        const bestIndex = tailsIndex.length ? tailsIndex[tailsIndex.length - 1] : -1;
+        const recon = bestIndex === -1 ? { seq: [], indexes: [] } : reconstructByParent(parent, bestIndex, nums);
+
+        movie.push(deepCopy({
+          type: 'bs', nums, tails, tailsIndex, parent, comparisons,
+          i, j: null, low, mid: null,
+          line: appended ? 3 : 4,
+          lis: tails.length,
+          lisSequence: recon.seq,
+          lisIndexes: recon.indexes,
+          bestIndex,
+          message: appended
+            ? `${currentValue} extends the tails array.`
+            : `${currentValue} updates pile ${low} to keep tails minimal.`
+        }));
+      }
+
+      const bestIndex = tailsIndex.length ? tailsIndex[tailsIndex.length - 1] : -1;
+      const recon = bestIndex === -1 ? { seq: [], indexes: [] } : reconstructByParent(parent, bestIndex, nums);
+
+      movie.push(deepCopy({
+        type: 'bs', nums, tails, tailsIndex, parent, comparisons,
+        i: bestIndex, j: null, low: null, mid: null,
+        line: 5,
+        lis: tails.length,
+        lisSequence: recon.seq,
+        lisIndexes: recon.indexes,
+        bestIndex,
+        message: `tails.length = ${tails.length}, which is the LIS length.`
+      }));
+
+      movie.push(deepCopy({
+        type: 'bs', nums, tails, tailsIndex, parent, comparisons,
+        i: bestIndex, j: null, low: null, mid: null,
+        line: 6,
+        lis: tails.length,
+        lisSequence: recon.seq,
+        lisIndexes: recon.indexes,
+        bestIndex,
+        message: `Finished. Reconstructed LIS = [${recon.seq.join(', ')}].`
+      }));
+
+      return movie;
+    }
+
+    function clearPlayback() {
+      clearTimeout(timer);
+      timer = null;
+      if (transitionRaf) {
+        cancelAnimationFrame(transitionRaf);
+        transitionRaf = null;
+      }
+    }
+
+    function resetApp(keepInput = true) {
+      clearPlayback();
+      frames = [];
+      current = 0;
+      statusText.textContent = 'Idle';
+      statusSub.textContent = 'Ready when you are';
+      stepText.textContent = '0 / 0';
+      comparisonText.textContent = '0';
+      lisText.textContent = '-';
+      lisSequenceText.textContent = 'Sequence: —';
+      messageBox.textContent = 'Enter numbers, press Build, and step through the algorithm.';
+      captionBadge.textContent = 'Awaiting build';
+      historyBody.innerHTML = '';
+      timelineTrack.innerHTML = '';
+      svgCanvas.innerHTML = '';
+      factInput.textContent = keepInput ? arrayInput.value : '—';
+      factState.textContent = '—';
+      factFocus.textContent = '—';
+      factLIS.textContent = '—';
+      stepBtn.disabled = true;
+      playBtn.disabled = true;
+      pauseBtn.disabled = true;
+      renderCode(algorithm.value, -1);
+      refreshModeBadges();
+    }
+
+    function refreshModeBadges() {
+      const isDP = algorithm.value === 'dp';
+      modeBadge.textContent = `Mode: ${isDP ? 'DP' : 'Binary Search'}`;
+      complexityBadge.textContent = `Time: ${isDP ? 'O(n²)' : 'O(n log n)'}`;
+      const n = parseNumbers().length;
+      arrayBadge.textContent = `n = ${n}`;
+    }
+
+    function historyColor(frame) {
+      if (frame.type === 'bs' && frame.mid !== null) return 'rgba(255,200,87,0.12)';
+      if (frame.type === 'dp' && frame.j !== null) return 'rgba(95,228,255,0.10)';
+      if ((frame.type === 'dp' && frame.line === 4) || (frame.type === 'bs' && frame.line === 3)) return 'rgba(57,217,138,0.12)';
+      return 'rgba(109,125,255,0.08)';
+    }
+
+    function populateHistory() {
+      renderHistoryWindow(0);
+    }
+
+    function renderHistoryWindow(activeIndex) {
+      historyBody.innerHTML = '';
+      const start = Math.max(0, activeIndex - 29);
+      const end = Math.min(frames.length - 1, Math.max(activeIndex, 29));
+      for (let index = start; index <= end; index++) {
+        const frame = frames[index];
+        const row = document.createElement('tr');
+        row.className = 'clickable';
+        row.style.background = historyColor(frame);
+        row.innerHTML = `<td>${index}</td><td>${frame.message}</td>`;
+        row.onclick = () => {
+          clearPlayback();
+          renderFrame(index);
+          if (index < frames.length - 1) statusText.textContent = 'Paused';
+          statusSub.textContent = 'Manual navigation';
+          playBtn.disabled = false;
+          pauseBtn.disabled = true;
+        };
+        if (index === activeIndex) row.classList.add('current');
+        historyBody.appendChild(row);
+      }
+    }
+
+    function populateTimeline() {
+      timelineTrack.innerHTML = '';
+      frames.forEach((frame, index) => {
+        const block = document.createElement('button');
+        block.className = 'timeline-step';
+        block.style.height = `${42 + (index % 5) * 11}px`;
+        block.innerHTML = `<span>${index}</span>`;
+        block.onclick = () => {
+          clearPlayback();
+          renderFrame(index);
+          playBtn.disabled = false;
+          pauseBtn.disabled = true;
+        };
+        timelineTrack.appendChild(block);
+      });
+    }
+
+    function softColor(index) {
+      const palette = ['#6d7dff', '#5fe4ff', '#9b6dff', '#39d98a', '#ffc857'];
+      return palette[index % palette.length];
+    }
+
+    function drawDefs() {
+      const glow = state.glow ? `
+        <filter id="shadowGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.28"/>
+          <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#7c99ff" flood-opacity="0.30"/>
+        </filter>
+      ` : '';
+
+      svgCanvas.innerHTML += `
+        <defs>
+          <linearGradient id="gridFade" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="rgba(255,255,255,0.10)" />
+            <stop offset="100%" stop-color="rgba(255,255,255,0.02)" />
+          </linearGradient>
+          <linearGradient id="barBlue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#7c92ff" />
+            <stop offset="100%" stop-color="#5269f8" />
+          </linearGradient>
+          <linearGradient id="barRed" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ff92a7" />
+            <stop offset="100%" stop-color="#ff6286" />
+          </linearGradient>
+          <linearGradient id="barYellow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#ffd97a" />
+            <stop offset="100%" stop-color="#ffc857" />
+          </linearGradient>
+          <linearGradient id="barGreen" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#7df0b7" />
+            <stop offset="100%" stop-color="#22c57a" />
+          </linearGradient>
+          ${glow}
+        </defs>
+      `;
+    }
+
+    function drawBackdrop() {
+      for (let y = 48; y <= 320; y += 44) {
+        svgCanvas.innerHTML += `<line x1="40" y1="${y}" x2="1060" y2="${y}" stroke="rgba(255,255,255,0.06)" stroke-dasharray="4 7" />`;
+      }
+      svgCanvas.innerHTML += `<text x="42" y="34" fill="${document.body.classList.contains('light') ? '#4b5a7a' : '#a9b3d1'}" font-size="14" font-weight="700">Input array visualization</text>`;
+    }
+
+
+    function getBarFill(index, activeI, activeJ, lisIndexes = []) {
+      const inLIS = state.showLIS && lisIndexes.includes(index);
+      if (inLIS) return 'url(#barGreen)';
+      if (index === activeI) return 'url(#barRed)';
+      if (index === activeJ) return 'url(#barYellow)';
+      return 'url(#barBlue)';
+    }
+
+    function computeBarLayout(nums, activeI, activeJ, lisIndexes = []) {
+      const minValue = Math.min(...nums, 0);
+      const maxValue = Math.max(...nums, 0, 1);
+      const range = Math.max(1, maxValue - minValue);
+      const plotTop = 70;
+      const plotBottom = 318;
+      const left = 52;
+      const plotWidth = 960;
+      const width = Math.max(30, Math.min(72, (plotWidth / Math.max(nums.length, 1)) - 10));
+      const gap = 10;
+      const full = nums.length * (width + gap) - gap;
+      const startX = left + Math.max(0, (plotWidth - full) / 2);
+      const zeroY = plotBottom - ((0 - minValue) / range) * (plotBottom - plotTop);
+
+      const bars = nums.map((value, index) => {
+        const scaledY = plotBottom - ((value - minValue) / range) * (plotBottom - plotTop);
+        const baseY = Math.min(zeroY, scaledY);
+        const height = Math.max(4, Math.abs(zeroY - scaledY));
+        const inLIS = state.showLIS && lisIndexes.includes(index);
+        let lift = 0;
+        if (index === activeI) lift = -16;
+        else if (index === activeJ) lift = -10;
+        else if (inLIS) lift = -6;
+
+        return {
+          index,
+          value,
+          x: startX + index * (width + gap),
+          width,
+          baseY,
+          y: baseY + lift,
+          height,
+          labelY: baseY + lift - 10,
+          indexY: 346,
+          markerY: 362,
+          marker: index === activeI ? 'i' : index === activeJ ? (algorithm.value === 'dp' ? 'j' : 'mid') : inLIS ? 'LIS' : '',
+          markerFill: index === activeI ? '#ff6b8b' : index === activeJ ? '#ffc857' : '#39d98a',
+          fill: getBarFill(index, activeI, activeJ, lisIndexes)
+        };
+      });
+
+      return { minValue, maxValue, range, plotTop, plotBottom, startX, width, gap, zeroY, bars };
+    }
+
+    function lerp(a, b, t) {
+      return a + (b - a) * t;
+    }
+
+    function easeInOutCubic(t) {
+      return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    function buildBarsForFrame(frame) {
+      return computeBarLayout(frame.nums, frame.i, frame.j ?? frame.mid, frame.lisIndexes || []);
+    }
+
+    function drawInterpolatedArrayBars(fromFrame, toFrame, t) {
+      const fromLayout = buildBarsForFrame(fromFrame);
+      const toLayout = buildBarsForFrame(toFrame);
+      const activeProgress = easeInOutCubic(t);
+      const zeroY = lerp(fromLayout.zeroY, toLayout.zeroY, activeProgress);
+      const labelFill = document.body.classList.contains('light') ? '#14213d' : '#ffffff';
+      const indexFill = document.body.classList.contains('light') ? '#617393' : '#a9b3d1';
+      const zeroFill = document.body.classList.contains('light') ? '#52627f' : '#a9b3d1';
+
+      svgCanvas.innerHTML += `<line x1="48" y1="${zeroY}" x2="1062" y2="${zeroY}" stroke="rgba(255,255,255,0.18)" stroke-dasharray="6 6" />`;
+      svgCanvas.innerHTML += `<text x="1060" y="${zeroY - 8}" fill="${zeroFill}" font-size="11" text-anchor="end">value = 0</text>`;
+
+      toLayout.bars.forEach((toBar, index) => {
+        const fromBar = fromLayout.bars[index] || toBar;
+        const x = lerp(fromBar.x, toBar.x, activeProgress);
+        const y = lerp(fromBar.y, toBar.y, activeProgress);
+        const height = lerp(fromBar.height, toBar.height, activeProgress);
+        const labelY = lerp(fromBar.labelY, toBar.labelY, activeProgress);
+        const markerY = lerp(fromBar.markerY + 6, toBar.markerY, activeProgress);
+        const opacity = 0.35 + 0.65 * activeProgress;
+        const fill = getBarFill(index, toFrame.i, toFrame.j ?? toFrame.mid, toFrame.lisIndexes || []);
+        const filter = state.glow ? ' filter="url(#shadowGlow)"' : '';
+
+        svgCanvas.innerHTML += `<rect x="${x}" y="${y}" width="${toBar.width}" height="${height}" rx="16" fill="${fill}" opacity="${opacity}"${filter}></rect>`;
+        svgCanvas.innerHTML += `<text x="${x + toBar.width / 2}" y="${labelY}" fill="${labelFill}" font-size="16" text-anchor="middle" font-weight="800">${toBar.value}</text>`;
+        svgCanvas.innerHTML += `<text x="${x + toBar.width / 2}" y="346" fill="${indexFill}" font-size="12" text-anchor="middle">index ${index}</text>`;
+        if (toBar.marker) {
+          svgCanvas.innerHTML += `<text x="${x + toBar.width / 2}" y="${markerY}" fill="${toBar.markerFill}" font-size="11" text-anchor="middle" font-weight="800" opacity="${opacity}">${toBar.marker}</text>`;
+        }
+      });
+
+      if (state.showLIS && (toFrame.lisIndexes || []).length > 1) {
+        const lisIndexes = toFrame.lisIndexes || [];
+        for (let k = 0; k < lisIndexes.length - 1; k++) {
+          const a = lisIndexes[k];
+          const b = lisIndexes[k + 1];
+          const fromA = fromLayout.bars[a] || toLayout.bars[a];
+          const fromB = fromLayout.bars[b] || toLayout.bars[b];
+          const toA = toLayout.bars[a];
+          const toB = toLayout.bars[b];
+          const x1 = lerp(fromA.x + fromA.width / 2, toA.x + toA.width / 2, activeProgress);
+          const x2 = lerp(fromB.x + fromB.width / 2, toB.x + toB.width / 2, activeProgress);
+          const y1 = lerp(fromA.y - 20, toA.y - 20, activeProgress);
+          const y2 = lerp(fromB.y - 20, toB.y - 20, activeProgress);
+          const cx = (x1 + x2) / 2;
+          svgCanvas.innerHTML += `<path d="M ${x1} ${y1} C ${cx} ${y1 - 30}, ${cx} ${y2 - 30}, ${x2} ${y2}" stroke="#39d98a" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="8 7" opacity="${0.2 + 0.8 * activeProgress}"></path>`;
+        }
+      }
+    }
+
+    function animateFrameTransition(fromFrame, toFrame, onComplete) {
+      if (transitionRaf) {
+        cancelAnimationFrame(transitionRaf);
+        transitionRaf = null;
+      }
+
+      const duration = 420;
+      const start = performance.now();
+
+      function step(now) {
+        const raw = Math.min(1, (now - start) / duration);
+        const t = easeInOutQuint(raw);
+        svgCanvas.innerHTML = '';
+        drawDefs();
+        drawBackdrop();
+        drawInterpolatedArrayBars(fromFrame, toFrame, t);
+
+        const secondaryOpacity = clamp((raw - 0.15) / 0.85, 0, 1);
+        svgCanvas.innerHTML += `<g opacity="${secondaryOpacity}">`;
+        if (toFrame.type === 'dp') drawDPState(toFrame.dp, toFrame.parent);
+        if (toFrame.type === 'bs') drawBSState(toFrame.tails, toFrame.tailsIndex, toFrame.low, toFrame.mid, toFrame.nums);
+        svgCanvas.innerHTML += `</g>`;
+
+        if (raw < 1) {
+          transitionRaf = requestAnimationFrame(step);
+        } else {
+          transitionRaf = null;
+          if (typeof onComplete === 'function') onComplete();
+        }
+      }
+
+      transitionRaf = requestAnimationFrame(step);
+    }
+
+    function drawArrayBars(nums, activeI, activeJ, lisIndexes = [], previousFrame = null) {
+      const minValue = Math.min(...nums, 0);
+      const maxValue = Math.max(...nums, 0, 1);
+      const range = Math.max(1, maxValue - minValue);
+      const plotTop = 70;
+      const plotBottom = 318;
+      const left = 52;
+      const plotWidth = 960;
+      const width = Math.max(30, Math.min(72, (plotWidth / Math.max(nums.length, 1)) - 10));
+      const gap = 10;
+      const full = nums.length * (width + gap) - gap;
+      const startX = left + Math.max(0, (plotWidth - full) / 2);
+      const zeroY = plotBottom - ((0 - minValue) / range) * (plotBottom - plotTop);
+
+      svgCanvas.innerHTML += `<line x1="48" y1="${zeroY}" x2="1062" y2="${zeroY}" stroke="rgba(255,255,255,0.18)" stroke-dasharray="6 6" />`;
+      svgCanvas.innerHTML += `<text x="1060" y="${zeroY - 8}" fill="${document.body.classList.contains('light') ? '#52627f' : '#a9b3d1'}" font-size="11" text-anchor="end">value = 0</text>`;
+
+      nums.forEach((value, index) => {
+        const scaledY = plotBottom - ((value - minValue) / range) * (plotBottom - plotTop);
+        const x = startX + index * (width + gap);
+        const y = Math.min(zeroY, scaledY);
+        const height = Math.max(4, Math.abs(zeroY - scaledY));
+        const inLIS = state.showLIS && lisIndexes.includes(index);
+
+        let fill = 'url(#barBlue)';
+        if (inLIS) fill = 'url(#barGreen)';
+        if (index === activeI) fill = 'url(#barRed)';
+        if (index === activeJ) fill = 'url(#barYellow)';
+
+        const filter = state.glow ? ' filter="url(#shadowGlow)"' : '';
+        svgCanvas.innerHTML += `<rect x="${x}" y="${y}" width="${width}" height="${height}" rx="16" fill="${fill}"${filter}></rect>`;
+        svgCanvas.innerHTML += `<text x="${x + width / 2}" y="${y - 10}" fill="${document.body.classList.contains('light') ? '#14213d' : '#ffffff'}" font-size="16" text-anchor="middle" font-weight="800">${value}</text>`;
+        svgCanvas.innerHTML += `<text x="${x + width / 2}" y="346" fill="${document.body.classList.contains('light') ? '#617393' : '#a9b3d1'}" font-size="12" text-anchor="middle">index ${index}</text>`;
+        if (index === activeI) {
+          svgCanvas.innerHTML += `<text x="${x + width / 2}" y="362" fill="#ff6b8b" font-size="11" text-anchor="middle" font-weight="800">i</text>`;
+        } else if (index === activeJ) {
+          svgCanvas.innerHTML += `<text x="${x + width / 2}" y="362" fill="#ffc857" font-size="11" text-anchor="middle" font-weight="800">${algorithm.value === 'dp' ? 'j' : 'mid'}</text>`;
+        } else if (inLIS) {
+          svgCanvas.innerHTML += `<text x="${x + width / 2}" y="362" fill="#39d98a" font-size="11" text-anchor="middle" font-weight="800">LIS</text>`;
+        }
+      });
+
+      if (state.showLIS && lisIndexes.length > 1) {
+        for (let k = 0; k < lisIndexes.length - 1; k++) {
+          const a = lisIndexes[k];
+          const b = lisIndexes[k + 1];
+          const x1 = startX + a * (width + gap) + width / 2;
+          const x2 = startX + b * (width + gap) + width / 2;
+          const scaledYA = plotBottom - ((nums[a] - minValue) / range) * (plotBottom - plotTop);
+          const scaledYB = plotBottom - ((nums[b] - minValue) / range) * (plotBottom - plotTop);
+          const y1 = Math.min(zeroY, scaledYA) - 20;
+          const y2 = Math.min(zeroY, scaledYB) - 20;
+          svgCanvas.innerHTML += `<path d="M ${x1} ${y1} C ${(x1+x2)/2} ${y1-30}, ${(x1+x2)/2} ${y2-30}, ${x2} ${y2}" stroke="#39d98a" stroke-width="4" fill="none" stroke-linecap="round" stroke-dasharray="8 7"></path>`;
+        }
+      }
+    }
+
+    function drawDPState(dp, parent) {
+      svgCanvas.innerHTML += `<text x="52" y="396" fill="${document.body.classList.contains('light') ? '#10203c' : '#eef2ff'}" font-size="16" font-weight="800">DP Array + Parent</text>`;
+      dp.forEach((value, index) => {
+        const x = 52 + index * 74;
+        svgCanvas.innerHTML += `<rect x="${x}" y="408" width="58" height="38" rx="12" fill="rgba(20,32,62,0.92)" stroke="#5fe4ff"></rect>`;
+        svgCanvas.innerHTML += `<text x="${x + 29}" y="432" fill="#5fe4ff" font-size="17" text-anchor="middle" font-weight="800">${value}</text>`;
+        const p = parent[index] === -1 ? '·' : parent[index];
+        svgCanvas.innerHTML += `<text x="${x + 29}" y="456" fill="${document.body.classList.contains('light') ? '#5b6d8d' : '#9fb0d4'}" font-size="10" text-anchor="middle">p:${p}</text>`;
+      });
+    }
+
+    function drawBSState(tails, tailsIndex, low, mid, nums) {
+      svgCanvas.innerHTML += `<text x="52" y="396" fill="${document.body.classList.contains('light') ? '#10203c' : '#eef2ff'}" font-size="16" font-weight="800">Tails Array</text>`;
+      tails.forEach((value, index) => {
+        const x = 52 + index * 86;
+        let fill = 'rgba(20,32,62,0.92)';
+        let stroke = '#8b9fff';
+        if (index === mid) { fill = 'rgba(82,56,5,0.9)'; stroke = '#ffc857'; }
+        if (index === low && mid === null) { fill = 'rgba(15,60,50,0.92)'; stroke = '#39d98a'; }
+        svgCanvas.innerHTML += `<rect x="${x}" y="408" width="70" height="38" rx="12" fill="${fill}" stroke="${stroke}"></rect>`;
+        svgCanvas.innerHTML += `<text x="${x + 35}" y="432" fill="#ffffff" font-size="17" text-anchor="middle" font-weight="800">${value}</text>`;
+        svgCanvas.innerHTML += `<text x="${x + 35}" y="456" fill="${document.body.classList.contains('light') ? '#5b6d8d' : '#9fb0d4'}" font-size="10" text-anchor="middle">idx:${tailsIndex[index]}</text>`;
+      });
+
+      if (tailsIndex.length) {
+        const values = tailsIndex.map(i => nums[i]);
+        svgCanvas.innerHTML += `<text x="620" y="432" fill="${document.body.classList.contains('light') ? '#3d4f73' : '#c6d4ff'}" font-size="14" font-weight="700">Current pile representatives: [${values.join(', ')}]</text>`;
+      }
+    }
+
+    function updateFacts(frame) {
+      factInput.textContent = `[${frame.nums.join(', ')}]`;
+      factState.textContent = frame.type === 'dp'
+        ? `dp = [${frame.dp.join(', ')}]`
+        : `tails = [${frame.tails.join(', ')}]`;
+      const focusBits = [];
+      if (frame.i !== null) focusBits.push(`i = ${frame.i}`);
+      if (frame.j !== null) focusBits.push(`j = ${frame.j}`);
+      if (frame.low !== null) focusBits.push(`low = ${frame.low}`);
+      if (frame.mid !== null) focusBits.push(`mid = ${frame.mid}`);
+      factFocus.textContent = focusBits.length ? focusBits.join(' · ') : 'No active pointer';
+      factLIS.textContent = frame.lisSequence && frame.lisSequence.length
+        ? `[${frame.lisSequence.join(', ')}]`
+        : 'Not available yet';
+    }
+
+    function renderFrame(index) {
+      if (index < 0 || index >= frames.length) return;
+      current = index;
+      const frame = frames[index];
+      svgCanvas.innerHTML = '';
+      drawDefs();
+      drawBackdrop();
+
+      messageBox.textContent = frame.message;
+      captionBadge.textContent = frame.type === 'dp' ? 'Dynamic Programming view' : 'Binary Search view';
+      stepText.textContent = `${index} / ${frames.length - 1}`;
+      comparisonText.textContent = frame.comparisons;
+      lisText.textContent = frame.lis;
+      lisSequenceText.textContent = frame.lisSequence && frame.lisSequence.length
+        ? `Sequence: [${frame.lisSequence.join(', ')}]`
+        : 'Sequence: —';
+      statusText.textContent = index === frames.length - 1 ? 'Done' : 'Ready';
+      statusSub.textContent = index === frames.length - 1 ? 'Traversal complete' : 'Frame loaded';
+      renderCode(frame.type, frame.line);
+      updateFacts(frame);
+
+      const previousFrame = index > 0 ? frames[index - 1] : null;
+      const shouldAnimateBars = previousFrame && !(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+      if (shouldAnimateBars) {
+        animateFrameTransition(previousFrame, frame);
+      } else {
+        drawArrayBars(frame.nums, frame.i, frame.j ?? frame.mid, frame.lisIndexes || [], previousFrame);
+        if (frame.type === 'dp') drawDPState(frame.dp, frame.parent);
+        if (frame.type === 'bs') drawBSState(frame.tails, frame.tailsIndex, frame.low, frame.mid, frame.nums);
+      }
+
+      renderHistoryWindow(index);
+
+      [...timelineTrack.children].forEach((block, blockIndex) => {
+        block.classList.toggle('current', blockIndex === index);
+        block.classList.toggle('done', blockIndex < index);
+      });
+    }
+
+    function build() {
+      resetApp();
+      const nums = parseNumbers();
+      refreshModeBadges();
+
+      if (nums.length === 0) {
+        statusText.textContent = 'Error';
+        statusSub.textContent = 'Invalid input';
+        messageBox.textContent = 'Please enter a valid comma-separated array.';
+        return;
+      }
+
+      if (nums.length > 20) {
+        messageBox.textContent = 'For the cleanest layout, keep the array length at 20 or fewer values.';
+      }
+
+      frames = algorithm.value === 'dp' ? createDPFrames(nums) : createBSFrames(nums);
+      populateHistory();
+      populateTimeline();
+      stepBtn.disabled = false;
+      playBtn.disabled = false;
+      pauseBtn.disabled = true;
+      statusText.textContent = 'Ready';
+      statusSub.textContent = 'Movie generated';
+      renderFrame(0);
+    }
+
+    function stepForward() {
+      if (current < frames.length - 1) {
+        renderFrame(current + 1);
+      }
+    }
+
+    function pause() {
+      clearPlayback();
+      if (frames.length > 0 && current < frames.length - 1) {
+        statusText.textContent = 'Paused';
+        statusSub.textContent = 'Playback stopped';
+      }
+      playBtn.disabled = false;
+      pauseBtn.disabled = true;
+    }
+
+    function play() {
+      if (!frames.length) return;
+      if (current >= frames.length - 1) {
+        statusText.textContent = 'Done';
+        statusSub.textContent = 'Traversal complete';
+        return;
+      }
+
+      statusText.textContent = 'Playing';
+      statusSub.textContent = 'Auto stepping';
+      playBtn.disabled = true;
+      pauseBtn.disabled = false;
+
+      const delay = 850 / Number(speedSlider.value);
+      timer = setTimeout(() => {
+        if (current < frames.length - 1) {
+          stepForward();
+          play();
+        } else {
+          pause();
+          statusText.textContent = 'Done';
+          statusSub.textContent = 'Traversal complete';
+        }
+      }, delay);
+    }
+
+    function randomArray() {
+      const length = Math.floor(Math.random() * 7) + 8;
+      const values = Array.from({ length }, () => Math.floor(Math.random() * 40) - 5);
+      arrayInput.value = values.join(', ');
+      refreshModeBadges();
+    }
+
+    async function copyState() {
+      const text = `Algorithm: ${algorithm.value}\nInput: ${arrayInput.value}`;
+      try {
+        await navigator.clipboard.writeText(text);
+        shareBtn.textContent = 'Copied';
+        setTimeout(() => shareBtn.textContent = 'Copy State', 1200);
+      } catch {
+        shareBtn.textContent = 'Failed';
+        setTimeout(() => shareBtn.textContent = 'Copy State', 1200);
+      }
+    }
+
+    function saveSVG() {
+      const blob = new Blob([svgCanvas.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'lis-visualizer.svg';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    function countDPComparisons(nums) {
+      let comparisons = 0;
+      for (let i = 0; i < nums.length; i++) {
+        for (let j = 0; j < i; j++) comparisons++;
+      }
+      return comparisons;
+    }
+
+    function countBSComparisons(nums) {
+      const tails = [];
+      let comparisons = 0;
+      for (const value of nums) {
+        let low = 0;
+        let high = tails.length;
+        while (low < high) {
+          comparisons++;
+          const mid = Math.floor((low + high) / 2);
+          if (tails[mid] < value) low = mid + 1;
+          else high = mid;
+        }
+        if (low === tails.length) tails.push(value);
+        else tails[low] = value;
+      }
+      return comparisons;
+    }
+
+    function lowerBoundWithReconstruction(nums) {
+      const tails = [];
+      for (const value of nums) {
+        let low = 0, high = tails.length;
+        while (low < high) {
+          const mid = Math.floor((low + high) / 2);
+          if (tails[mid] < value) low = mid + 1;
+          else high = mid;
+        }
+        if (low === tails.length) tails.push(value);
+        else tails[low] = value;
+      }
+      return tails.length;
+    }
+
+    function wrongUpperBoundLength(nums) {
+      const tails = [];
+      for (const value of nums) {
+        let low = 0, high = tails.length;
+        while (low < high) {
+          const mid = Math.floor((low + high) / 2);
+          if (tails[mid] <= value) low = mid + 1;
+          else high = mid;
+        }
+        if (low === tails.length) tails.push(value);
+        else tails[low] = value;
+      }
+      return tails.length;
+    }
+
+    function renderGrowthChart() {
+      if (!growthSvg) return;
+      const n = Number(growthN.value);
+      growthNText.textContent = String(n);
+      const maxN = n;
+      const points = [];
+      let maxY = 1;
+      for (let k = 2; k <= maxN; k++) {
+        const descending = Array.from({ length: k }, (_, i) => k - i);
+        const dpActual = countDPComparisons(descending);
+        const bsActual = countBSComparisons(descending);
+        const dpTheory = k * k;
+        const bsTheory = k * Math.log2(k);
+        points.push({ k, dpActual, bsActual, dpTheory, bsTheory });
+        maxY = Math.max(maxY, dpActual, bsActual, dpTheory, bsTheory);
+      }
+      const W = 900, H = 320, L = 60, R = 20, T = 20, B = 44;
+      const x = k => L + ((k - 2) / Math.max(1, maxN - 2)) * (W - L - R);
+      const y = v => H - B - (v / maxY) * (H - T - B);
+      const pathFor = key => points.map((p, i) => `${i ? 'L' : 'M'} ${x(p.k).toFixed(2)} ${y(p[key]).toFixed(2)}`).join(' ');
+      growthSvg.innerHTML = '';
+      for (let gy = 0; gy <= 4; gy++) {
+        const yy = T + gy * ((H - T - B) / 4);
+        growthSvg.innerHTML += `<line x1="${L}" y1="${yy}" x2="${W-R}" y2="${yy}" stroke="rgba(255,255,255,0.08)" stroke-dasharray="4 6"/>`;
+      }
+      growthSvg.innerHTML += `<line x1="${L}" y1="${H-B}" x2="${W-R}" y2="${H-B}" stroke="rgba(255,255,255,0.18)"/>`;
+      growthSvg.innerHTML += `<line x1="${L}" y1="${T}" x2="${L}" y2="${H-B}" stroke="rgba(255,255,255,0.18)"/>`;
+      growthSvg.innerHTML += `<path d="${pathFor('dpActual')}" fill="none" stroke="#ff6b8b" stroke-width="3.5"/>`;
+      growthSvg.innerHTML += `<path d="${pathFor('dpTheory')}" fill="none" stroke="#ffd166" stroke-width="2.5" stroke-dasharray="8 6"/>`;
+      growthSvg.innerHTML += `<path d="${pathFor('bsActual')}" fill="none" stroke="#5fe4ff" stroke-width="3.5"/>`;
+      growthSvg.innerHTML += `<path d="${pathFor('bsTheory')}" fill="none" stroke="#39d98a" stroke-width="2.5" stroke-dasharray="8 6"/>`;
+      growthSvg.innerHTML += `<text x="${W/2}" y="${H-10}" fill="${document.body.classList.contains('light') ? '#52627f' : '#a9b3d1'}" font-size="12" text-anchor="middle">Input size n</text>`;
+      growthSvg.innerHTML += `<text x="18" y="${H/2}" fill="${document.body.classList.contains('light') ? '#52627f' : '#a9b3d1'}" font-size="12" text-anchor="middle" transform="rotate(-90 18 ${H/2})">Operations</text>`;
+      const last = points[points.length - 1];
+      dpActualText.textContent = last.dpActual.toLocaleString();
+      dpTheoryText.textContent = Math.round(last.dpTheory).toLocaleString();
+      bsActualText.textContent = last.bsActual.toLocaleString();
+      bsTheoryText.textContent = Math.round(last.bsTheory).toLocaleString();
+      worstCaseText.textContent = `For n = ${n}, the decreasing worst-case family gives DP about ${last.dpActual} pairwise comparisons, while the binary-search version needs only ${last.bsActual} search comparisons. This illustrates O(n²) versus O(n log n).`;
+    }
+
+    function updateImpactSection() {
+      const example = [2, 2, 2, 2, 2];
+      const correct = lowerBoundWithReconstruction(example);
+      const wrong = wrongUpperBoundLength(example);
+      impactGood.textContent = `Example [${example.join(', ')}] with the correct lower-bound rule gives LIS length ${correct}. Equal values replace an existing tail, so the sequence remains strictly increasing.`;
+      impactBad.textContent = `If we change the search rule to upper-bound / append on equal, the same example can incorrectly grow to length ${wrong}, which behaves like a non-decreasing subsequence instead of a strictly increasing one.`;
+      impactSummary.textContent = `The search rule is not a minor implementation detail. Finding the first tail ≥ current value is exactly what preserves correctness for strict LIS.`;
+    }
+
+    preset1.onclick = () => { arrayInput.value = '10, 9, 2, 5, 3, 7, 101, 18'; refreshModeBadges(); };
+    preset2.onclick = () => { arrayInput.value = '0, 1, 0, 3, 2, 3'; refreshModeBadges(); };
+    preset3.onclick = () => { arrayInput.value = '7, 7, 7, 7, 7, 7, 7'; refreshModeBadges(); };
+    preset4.onclick = () => { arrayInput.value = '10, 9, 8, 7, 6, 5, 4, 3, 2, 1'; refreshModeBadges(); };
+
+    speedSlider.oninput = () => {
+      speedText.textContent = `${speedSlider.value}x`;
+    };
+
+    growthN.oninput = renderGrowthChart;
+
+    algorithm.onchange = () => {
+      renderCode(algorithm.value, -1);
+      refreshModeBadges();
+    };
+
+    buildBtn.onclick = build;
+    stepBtn.onclick = () => { pause(); stepForward(); };
+    playBtn.onclick = play;
+    pauseBtn.onclick = pause;
+    resetBtn.onclick = () => resetApp();
+    randomBtn.onclick = randomArray;
+    shareBtn.onclick = copyState;
+    pngBtn.onclick = saveSVG;
+    themeBtn.onclick = () => setTheme(state.theme === 'dark' ? 'light' : 'dark');
+    lisSwitch.onclick = () => toggleSwitch(lisSwitch, 'showLIS');
+    glowSwitch.onclick = () => toggleSwitch(glowSwitch, 'glow');
+
+    document.addEventListener('keydown', (event) => {
+      if (event.target.tagName === 'INPUT') return;
+      if (event.code === 'Space') {
+        event.preventDefault();
+        if (timer) pause();
+        else play();
+      }
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        pause();
+        stepForward();
+      }
+      if (event.key.toLowerCase() === 'r') {
+        event.preventDefault();
+        randomArray();
+      }
+    });
+
+
+    lisSwitch.classList.add('active');
+    glowSwitch.classList.add('active');
+    setTheme(state.theme);
+    updateReconBadge();
+    refreshModeBadges();
+    renderCode('dp', -1);
+    renderGrowthChart();
+    updateImpactSection();
+    resetApp();
+  </script>
+</body>
+</html>
